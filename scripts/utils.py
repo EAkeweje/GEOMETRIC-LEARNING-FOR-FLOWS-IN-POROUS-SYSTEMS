@@ -195,3 +195,16 @@ def gen_pore_array(img_path:str):
   #adjustment so that the pore spaces are mapped to 0 and the solid immovable parts mapped to 1
   pore_array = np.ones_like(k) - k
   return pore_array
+ 
+def plot_result(W,X,Y,Z):
+  '''
+  The function defined to visualize experiment results
+  '''
+  print('Visualization of results :)')
+  fig, ax = plt.subplots(2,2,figsize = (15,15))
+  ax[0,0].imshow(W, cmap='coolwarm',vmin = 0.6*np.min(f[:,:,0]), vmax = 0.6*np.max(f[:,:,1]));
+  ax[0,1].imshow(X, cmap='coolwarm', vmin = 0.6*np.min(f[:,:,0]), vmax = 0.6*np.max(f[:,:,1]));
+  # prediction
+  ax[1,0].imshow(Y, cmap='coolwarm', vmin = 0.6*np.min(f[:,:,0]), vmax = 0.6*np.max(f[:,:,1]));
+  ax[1,1].imshow(Z, cmap='coolwarm', vmin = 0.6*np.min(f[:,:,0]), vmax = 0.6*np.max(f[:,:,1]));
+  plt.show()
