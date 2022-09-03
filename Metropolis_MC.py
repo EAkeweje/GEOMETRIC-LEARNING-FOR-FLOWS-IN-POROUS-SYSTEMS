@@ -1,5 +1,6 @@
 ## Import libraries
-
+import argparse
+from pickletools import float8
 import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import trange, tqdm
@@ -150,16 +151,22 @@ def simulation(adj, neighbors, sensors, steps):
     return sensors, Statistics, \
            best_sensor_loc, E_min
 
+def init_parser():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--T',default=0.01, type=float)
+    parser.add_argument('--N_sensors',default=5, type=int)
+    return parser.parse_args()
+
 if __name__ == '__main__':
     ks = 2 #coarse_graining grid size
     G = nx.read_gpickle(f"pore_network_0{ks}.gpickle")
     rng = np.random.RandomState(42)
+    args = init_parser()
     hyperparameter_defaults = dict(
-        T=1,
-        N_sensors=200,
         steps = 10**4
         )
     wandb.init(config=hyperparameter_defaults)
+    wandb.config.update(args)
 
     config = wandb.config
     T = config.T
