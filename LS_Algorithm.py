@@ -221,18 +221,18 @@ def get_nme(nodes, ks, G):
     #extract sensor (nodes) positions
     gauge_pos = get_node_pos(G, nodes)
 
-    try:
-        dataset = FluidDatasetPlus(img_path="./Dataset/1.png",
-                                   root_dir = "./Dataset",
-                                   ks = ks, gauge_pos = gauge_pos)
-    except AssertionError:
-        if (29, 71) in gauge_pos:
-            gauge_pos.remove((29, 71))
-        if (109, 36) in gauge_pos:
-            gauge_pos.remove((109, 36))
-        dataset = FluidDatasetPlus(img_path="./Dataset/1.png",
-                                   root_dir = "./Dataset",
-                                   ks = ks, gauge_pos = gauge_pos)
+    # try:
+    dataset = FluidDatasetPlus(img_path="./Dataset/1.png",
+                                root_dir = "./Dataset",
+                                ks = ks, gauge_pos = gauge_pos)
+    # except AssertionError:
+    #     if (29, 71) in gauge_pos:
+    #         gauge_pos.remove((29, 71))
+    #     if (109, 36) in gauge_pos:
+    #         gauge_pos.remove((109, 36))
+    #     dataset = FluidDatasetPlus(img_path="./Dataset/1.png",
+    #                                root_dir = "./Dataset",
+    #                                ks = ks, gauge_pos = gauge_pos)
 
     # print(f'Selected {dataset.num_gauge} nodes')
 
