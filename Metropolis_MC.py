@@ -165,7 +165,7 @@ if __name__ == '__main__':
     hyperparameter_defaults = dict(
         steps = 10**4
         )
-    wandb.init(config=hyperparameter_defaults)
+    wandb.init(config=hyperparameter_defaults, entity="emmanuel-vsevolod")
     wandb.config.update(args)
 
     config = wandb.config
