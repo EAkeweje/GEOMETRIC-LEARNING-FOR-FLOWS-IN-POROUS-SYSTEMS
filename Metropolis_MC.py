@@ -108,7 +108,7 @@ def cycle(sensors, E_tot, neighbors, adj, steps):
     cycle of metropolis algorithm's steps
     stores information about energy levels during the simulation
     '''
-
+    sensors_loc_df.loc[0] = sensors
     Statistics = np.array([0.,  # 'no_neighbors'
                         0.,  # 'occupied'
                         0.,  # 'accepted'
@@ -122,12 +122,13 @@ def cycle(sensors, E_tot, neighbors, adj, steps):
     for i in trange(1,steps+1):
         sensors, E_tot, Statistics = step(sensors, E_tot, 
                                           Statistics, neighbors, adj)
+        sensors_loc_df.loc[i] = sensors
         if E_tot < E_min:
             best_sensor_loc = sensors.copy()
             
             E_min = E_tot
-            # best_step = i
-            wandb.log({'E/Emin': E_min, 'Best sensor location': best_sensor_loc}, commit=False)
+            best_step = i
+            wandb.log({'E/Emin': E_min, 'Best sensor location': best_sensor_loc, 'best step': best_step},commit=False)
         
         wandb.log({'E/E': E_tot, 'Statistics/no_neighbors':Statistics[0], 'Statistics/occupied':Statistics[1], 
                    'Statistics/accepted':Statistics[2], 'Statistics/rejected':Statistics[3]})
@@ -165,18 +166,18 @@ if __name__ == '__main__':
     hyperparameter_defaults = dict(
         steps = 10**4
         )
-    wandb.init(config=hyperparameter_defaults)
+    wandb.init(config=hyperparameter_defaults, entity="emmanuel-vsevolod")
     wandb.config.update(args)
 
     config = wandb.config
     T = config.T
     N_sensors = config.N_sensors
     steps = config.steps
-    
+    sensors_loc_df = pd.DataFrame(columns=np.arange(N_sensors))
     adj, neighbors, sensors = system_initialization(G, N_sensors)
     sensors, Statistics, best_sensor_loc, E_min =\
         simulation(adj, neighbors, sensors, steps)
-
+    wandb.log({'sensors movement table': sensors_loc_df}, commit=False)
     data = {"best_location":best_sensor_loc}
     df = pd.DataFrame(data)
     best_loc_table = wandb.Table(data=df)

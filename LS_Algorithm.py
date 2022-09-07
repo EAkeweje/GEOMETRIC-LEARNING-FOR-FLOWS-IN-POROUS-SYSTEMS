@@ -16,7 +16,7 @@ import cv2
 import random
 import glob
 import copy
-
+import pickle
 #####custom functions########
 import sys
 import os
@@ -88,26 +88,40 @@ class FluidDatasetPlus(Dataset):
         for b_ in dup_sensor:
             self.gauge_space.remove(b_)
 
+        self.no_gauge_space_np = np.array(self.no_gauge_space).transpose()
+        self.gauge_space_np = np.array(self.gauge_space).transpose()
+
     def __len__(self):
         return len(self.vel_data)
 
     def __getitem__(self, idx):
         if torch.is_tensor(idx):
             idx = idx.tolist()
-        #get velocity field data
-        f = np.loadtxt(self.vel_data[idx])
-        f = np.reshape(f,(256,256,2))
-        f = np.rot90(f)
-        #coarse graining velocity data
-        CG_f_0 = utils.coarse_grain(f[:,:,0],self.ks)/(self.ks*self.ks)
-        CG_f_1 = utils.coarse_grain(f[:,:,1],self.ks)/(self.ks*self.ks)
+        # #get velocity field data
+        # f = np.loadtxt(self.vel_data[idx])
+        # f = np.reshape(f,(256,256,2))
+        # f = np.rot90(f)
+        # #coarse graining velocity data
+        # CG_f_0 = utils.coarse_grain(f[:,:,0],self.ks)/(self.ks*self.ks)
+        # CG_f_1 = utils.coarse_grain(f[:,:,1],self.ks)/(self.ks*self.ks)
+
+        idx2 = int(self.vel_data[idx][21:-14]) #number from the file name
+        with open(f'./Dataset3/picklesave_{idx2}','rb') as File:
+            f = pickle.load(File)
+            CG_f_0 = pickle.load(File)
+            CG_f_1 = pickle.load(File)
         #partitions velocity data
-        vel_x_ngs = [CG_f_0[i] for i in self.no_gauge_space] #velocity (x-dimension) at no sensor
-        vel_y_ngs = [CG_f_1[i] for i in self.no_gauge_space] #velocity (y-dimension) at no sensor
-        vel_x_gs = [CG_f_0[i] for i in self.gauge_space] #velocity (x-dimension) from sensor
-        vel_y_gs = [CG_f_1[i] for i in self.gauge_space] #velocity (y-dimension) from sensor
-        
-        return torch.tensor([vel_x_gs,vel_y_gs]), torch.tensor([vel_x_ngs,vel_y_ngs]) #returns sensor data (tensor), no sensor data (tensor)
+        # vel_x_ngs = [CG_f_0[i] for i in self.no_gauge_space] #velocity (x-dimension) at no sensor
+        # vel_y_ngs = [CG_f_1[i] for i in self.no_gauge_space] #velocity (y-dimension) at no sensor
+        # vel_x_gs = [CG_f_0[i] for i in self.gauge_space] #velocity (x-dimension) from sensor
+        # vel_y_gs = [CG_f_1[i] for i in self.gauge_space] #velocity (y-dimension) from sensor
+        vel_x_ngs = CG_f_0[self.no_gauge_space_np[0],self.no_gauge_space_np[1]] #velocity (x-dimension) at no sensor
+        vel_y_ngs = CG_f_1[self.no_gauge_space_np[0],self.no_gauge_space_np[1]] #velocity (y-dimension) at no sensor
+        vel_x_gs = CG_f_0[self.gauge_space_np[0],self.gauge_space_np[1]] #velocity (x-dimension) from sensor
+        vel_y_gs = CG_f_1[self.gauge_space_np[0],self.gauge_space_np[1]] #velocity (y-dimension) from sensor
+        # assert (vel_x_ngs==vel_x_ngs1).all() and (vel_y_ngs==vel_y_ngs1).all() and (vel_y_gs==vel_y_gs1).all() and (vel_x_gs==vel_x_gs1).all()
+
+        return torch.as_tensor(np.array([vel_x_gs,vel_y_gs])), torch.as_tensor(np.array([vel_x_ngs,vel_y_ngs])) #returns sensor data (tensor), no sensor data (tensor)
 
 ##LS solver
 class LSReconstrutor():
@@ -216,6 +230,22 @@ def get_node_pos(G, node_list):
     for i in node_list:
         pos.append(G.nodes(data = 'node_pos')[i])
     return pos
+
+
+def get_node_pos_dict(G, node_list):
+    '''
+    inputs:::
+    G: nx Graph
+    node_list (list): A list of nodes to place gauges
+
+    return:::
+    A dictionary of node position in the porous structure
+    '''
+    pos = {}
+    for i in node_list:
+        pos[i]=G.nodes(data = 'node_pos')[i]
+    return pos
+
 
 def get_nme(nodes, ks, G):
     #extract sensor (nodes) positions
