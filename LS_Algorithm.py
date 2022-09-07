@@ -217,6 +217,22 @@ def get_node_pos(G, node_list):
         pos.append(G.nodes(data = 'node_pos')[i])
     return pos
 
+
+def get_node_pos_dict(G, node_list):
+    '''
+    inputs:::
+    G: nx Graph
+    node_list (list): A list of nodes to place gauges
+
+    return:::
+    A dictionary of node position in the porous structure
+    '''
+    pos = {}
+    for i in node_list:
+        pos[i]=G.nodes(data = 'node_pos')[i]
+    return pos
+
+
 def get_nme(nodes, ks, G):
     #extract sensor (nodes) positions
     gauge_pos = get_node_pos(G, nodes)
