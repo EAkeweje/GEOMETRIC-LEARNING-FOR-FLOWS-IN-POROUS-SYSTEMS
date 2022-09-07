@@ -94,13 +94,19 @@ class FluidDatasetPlus(Dataset):
     def __getitem__(self, idx):
         if torch.is_tensor(idx):
             idx = idx.tolist()
-        #get velocity field data
-        f = np.loadtxt(self.vel_data[idx])
-        f = np.reshape(f,(256,256,2))
-        f = np.rot90(f)
-        #coarse graining velocity data
-        CG_f_0 = utils.coarse_grain(f[:,:,0],self.ks)/(self.ks*self.ks)
-        CG_f_1 = utils.coarse_grain(f[:,:,1],self.ks)/(self.ks*self.ks)
+        # #get velocity field data
+        # f = np.loadtxt(self.vel_data[idx])
+        # f = np.reshape(f,(256,256,2))
+        # f = np.rot90(f)
+        # #coarse graining velocity data
+        # CG_f_0 = utils.coarse_grain(f[:,:,0],self.ks)/(self.ks*self.ks)
+        # CG_f_1 = utils.coarse_grain(f[:,:,1],self.ks)/(self.ks*self.ks)
+
+        idx2 = int(self.vel_data[idx][21:-14]) #number from the file name
+        with open(f'./Dataset3/picklesave_{idx2}','rb') as File:
+            f = pickle.load(File)
+            CG_f_0 = pickle.load(File)
+            CG_f_1 = pickle.load(File)
         #partitions velocity data
         vel_x_ngs = [CG_f_0[i] for i in self.no_gauge_space] #velocity (x-dimension) at no sensor
         vel_y_ngs = [CG_f_1[i] for i in self.no_gauge_space] #velocity (y-dimension) at no sensor
