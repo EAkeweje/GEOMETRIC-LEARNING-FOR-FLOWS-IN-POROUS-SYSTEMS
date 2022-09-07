@@ -16,7 +16,7 @@ import cv2
 import random
 import glob
 import copy
-
+import pickle
 #####custom functions########
 import sys
 import os
@@ -120,8 +120,8 @@ class FluidDatasetPlus(Dataset):
         vel_x_gs = CG_f_0[self.gauge_space_np[0],self.gauge_space_np[1]] #velocity (x-dimension) from sensor
         vel_y_gs = CG_f_1[self.gauge_space_np[0],self.gauge_space_np[1]] #velocity (y-dimension) from sensor
         # assert (vel_x_ngs==vel_x_ngs1).all() and (vel_y_ngs==vel_y_ngs1).all() and (vel_y_gs==vel_y_gs1).all() and (vel_x_gs==vel_x_gs1).all()
-        
-        return torch.tensor([vel_x_gs,vel_y_gs]), torch.tensor([vel_x_ngs,vel_y_ngs]) #returns sensor data (tensor), no sensor data (tensor)
+
+        return torch.as_tensor(np.array([vel_x_gs,vel_y_gs])), torch.as_tensor(np.array([vel_x_ngs,vel_y_ngs])) #returns sensor data (tensor), no sensor data (tensor)
 
 ##LS solver
 class LSReconstrutor():
