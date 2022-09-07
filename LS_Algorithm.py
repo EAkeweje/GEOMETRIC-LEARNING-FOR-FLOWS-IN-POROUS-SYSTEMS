@@ -88,6 +88,9 @@ class FluidDatasetPlus(Dataset):
         for b_ in dup_sensor:
             self.gauge_space.remove(b_)
 
+        self.no_gauge_space_np = np.array(self.no_gauge_space).transpose()
+        self.gauge_space_np = np.array(self.gauge_space).transpose()
+
     def __len__(self):
         return len(self.vel_data)
 
@@ -108,10 +111,15 @@ class FluidDatasetPlus(Dataset):
             CG_f_0 = pickle.load(File)
             CG_f_1 = pickle.load(File)
         #partitions velocity data
-        vel_x_ngs = [CG_f_0[i] for i in self.no_gauge_space] #velocity (x-dimension) at no sensor
-        vel_y_ngs = [CG_f_1[i] for i in self.no_gauge_space] #velocity (y-dimension) at no sensor
-        vel_x_gs = [CG_f_0[i] for i in self.gauge_space] #velocity (x-dimension) from sensor
-        vel_y_gs = [CG_f_1[i] for i in self.gauge_space] #velocity (y-dimension) from sensor
+        # vel_x_ngs = [CG_f_0[i] for i in self.no_gauge_space] #velocity (x-dimension) at no sensor
+        # vel_y_ngs = [CG_f_1[i] for i in self.no_gauge_space] #velocity (y-dimension) at no sensor
+        # vel_x_gs = [CG_f_0[i] for i in self.gauge_space] #velocity (x-dimension) from sensor
+        # vel_y_gs = [CG_f_1[i] for i in self.gauge_space] #velocity (y-dimension) from sensor
+        vel_x_ngs = CG_f_0[self.no_gauge_space_np[0],self.no_gauge_space_np[1]] #velocity (x-dimension) at no sensor
+        vel_y_ngs = CG_f_1[self.no_gauge_space_np[0],self.no_gauge_space_np[1]] #velocity (y-dimension) at no sensor
+        vel_x_gs = CG_f_0[self.gauge_space_np[0],self.gauge_space_np[1]] #velocity (x-dimension) from sensor
+        vel_y_gs = CG_f_1[self.gauge_space_np[0],self.gauge_space_np[1]] #velocity (y-dimension) from sensor
+        # assert (vel_x_ngs==vel_x_ngs1).all() and (vel_y_ngs==vel_y_ngs1).all() and (vel_y_gs==vel_y_gs1).all() and (vel_x_gs==vel_x_gs1).all()
         
         return torch.tensor([vel_x_gs,vel_y_gs]), torch.tensor([vel_x_ngs,vel_y_ngs]) #returns sensor data (tensor), no sensor data (tensor)
 
