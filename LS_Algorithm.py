@@ -50,7 +50,7 @@ class FluidDatasetPlus(Dataset):
         ##get pore image array
         an_image = PIL.Image.open(self.img_path)
         image_sequence = an_image.getdata()
-        image_array = np.array(image_sequence)/255
+        # image_array = np.array(image_sequence)/255
         k = np.asarray(an_image)[:,:,0]/255
         #adjustment so that the pore spaces are mapped to 0 and the solid immovable parts mapped to 1
         self.pore_array = np.ones_like(k) - k
@@ -78,7 +78,7 @@ class FluidDatasetPlus(Dataset):
             self.num_gauge = len(gauge_pos)
         # assert self.num_gauge == self.gauge_space, 'Number of guages generated is not equal to the number specified'
         #identify the no remaining no gauge spots (to estimate)
-        self.no_gauge_space = copy.deepcopy(self.total_space)
+        self.no_gauge_space = self.total_space.copy()
         dup_sensor = list()
         for b_ in self.gauge_space:
             try:
@@ -124,7 +124,7 @@ class FluidDatasetPlus(Dataset):
         return torch.as_tensor(np.array([vel_x_gs,vel_y_gs])), torch.as_tensor(np.array([vel_x_ngs,vel_y_ngs])) #returns sensor data (tensor), no sensor data (tensor)
 
 ##LS solver
-class LSReconstrutor():
+class LSReconstructor():
     def __init__(self, dataset, data_split = 0.3, shuffle = True, seed = 42):
 
         self.data_split = data_split
@@ -141,21 +141,26 @@ class LSReconstrutor():
         train_indices, val_indices = indices[split:], indices[:split]
 
         # Creating PT data samplers and loaders:
-        train_sampler = SubsetRandomSampler(train_indices, torch.random.manual_seed(seed))
-        valid_sampler = SubsetRandomSampler(val_indices, torch.random.manual_seed(seed))
+        # train_sampler = SubsetRandomSampler(train_indices, torch.random.manual_seed(seed))
+        # valid_sampler = SubsetRandomSampler(val_indices, torch.random.manual_seed(seed))
+        self.train_subset = torch.utils.data.Subset(dataset, train_indices)
+        self.valid_subset = torch.utils.data.Subset(dataset, val_indices)
         #Creating dataloaders
-        self.train_loader = torch.utils.data.DataLoader(dataset, batch_size=1, sampler=train_sampler)
-        self.validation_loader = torch.utils.data.DataLoader(dataset, batch_size=1, sampler=valid_sampler)
+        self.train_loader = torch.utils.data.DataLoader(self.train_subset, batch_size=1)
+        self.validation_loader = torch.utils.data.DataLoader(self.valid_subset, batch_size=1)
 
     def fit(self):
-        #(training) data loading
-        for i, (x,y) in enumerate(self.train_loader):
-            if i == 0:
-                output_stack = y
-                input_stack = x
-            else:
-                output_stack = torch.cat([output_stack,y])
-                input_stack = torch.cat([input_stack,x])
+        # (training) data loading
+        # for i, (x,y) in enumerate(self.train_loader):
+        #     if i == 0:
+        #         output_stack = y
+        #         input_stack = x
+        #     else:
+        #         output_stack = torch.cat([output_stack,y])
+        #         input_stack = torch.cat([input_stack,x])
+        
+        output_stack = torch.stack([y for (x,y) in self.train_loader]).squeeze()
+        input_stack = torch.stack([x for (x,y) in self.train_loader]).squeeze()
 
         #vectorization of data
         output_dim = output_stack.shape[0]
@@ -175,18 +180,22 @@ class LSReconstrutor():
         where A = reconstruction operator, X = sensor measurement
         Also Computes the error; limited to NME, R2 and NFE.
         '''
-        for i, (x,y) in enumerate(self.validation_loader):
-            x_dim = x.shape[0]
-            y_dim = y.shape[0]
-            #vectorize validation each snapshot
-            x = x.view(x_dim,-1).T
-            y = y.view(y_dim,-1).T
-            if i == 0:
-                target_stack = y.T
-                pred_stack = (self.coef_mat @ x).T
-            else:
-                target_stack = torch.cat([target_stack,y.T])
-                pred_stack = torch.cat([pred_stack, (self.coef_mat @ x).T])
+        # for i, (x,y) in enumerate(self.validation_loader):
+        #     x_dim = x.shape[0]
+        #     y_dim = y.shape[0]
+        #     #vectorize validation each snapshot
+        #     x = x.view(x_dim,-1).T
+        #     y = y.view(y_dim,-1).T
+        #     if i == 0:
+        #         target_stack = y.T
+        #         pred_stack = (self.coef_mat @ x).T
+        #     else:
+        #         target_stack = torch.cat([target_stack,y.T])
+        #         pred_stack = torch.cat([pred_stack, (self.coef_mat @ x).T])
+
+        target_stack = torch.stack([y.view(y.shape[0],-1) for (x,y) in self.validation_loader]).squeeze()
+        pred_stack = torch.stack([(self.coef_mat @ x.view(x.shape[0],-1).T).T 
+                    for (x,y) in self.validation_loader]).squeeze()
 
         self.target = target_stack
         self.pred = pred_stack
@@ -266,7 +275,7 @@ def get_nme(nodes, ks, G):
 
     # print(f'Selected {dataset.num_gauge} nodes')
 
-    LS = LSReconstrutor(dataset)
+    LS = LSReconstructor(dataset)
     LS.fit()
     LS.predict()
     return LS.NME
@@ -277,7 +286,7 @@ if __name__ == '__main__':
     G = nx.read_gpickle(f"pore_network_0{ks}.gpickle")
 
     #select nodes
-    nodes = random.sample(list(np.arange(310)), 100)
+    nodes = random.sample(list(np.arange(280)), 100)
 
 
     print(get_nme(nodes, ks, G))
