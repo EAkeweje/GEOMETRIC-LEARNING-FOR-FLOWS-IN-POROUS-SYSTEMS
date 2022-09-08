@@ -50,7 +50,7 @@ class FluidDatasetPlus(Dataset):
         ##get pore image array
         an_image = PIL.Image.open(self.img_path)
         image_sequence = an_image.getdata()
-        image_array = np.array(image_sequence)/255
+        # image_array = np.array(image_sequence)/255
         k = np.asarray(an_image)[:,:,0]/255
         #adjustment so that the pore spaces are mapped to 0 and the solid immovable parts mapped to 1
         self.pore_array = np.ones_like(k) - k
@@ -124,7 +124,7 @@ class FluidDatasetPlus(Dataset):
         return torch.as_tensor(np.array([vel_x_gs,vel_y_gs])), torch.as_tensor(np.array([vel_x_ngs,vel_y_ngs])) #returns sensor data (tensor), no sensor data (tensor)
 
 ##LS solver
-class LSReconstrutor():
+class LSReconstructor():
     def __init__(self, dataset, data_split = 0.3, shuffle = True, seed = 42):
 
         self.data_split = data_split
@@ -266,7 +266,7 @@ def get_nme(nodes, ks, G):
 
     # print(f'Selected {dataset.num_gauge} nodes')
 
-    LS = LSReconstrutor(dataset)
+    LS = LSReconstructor(dataset)
     LS.fit()
     LS.predict()
     return LS.NME
@@ -277,7 +277,7 @@ if __name__ == '__main__':
     G = nx.read_gpickle(f"pore_network_0{ks}.gpickle")
 
     #select nodes
-    nodes = random.sample(list(np.arange(310)), 100)
+    nodes = random.sample(list(np.arange(280)), 100)
 
 
     print(get_nme(nodes, ks, G))
